@@ -1,0 +1,164 @@
+---
+title: "Math189_Homework03"
+output: html_document
+---
+
+
+```{r}
+# Read in the data
+data <- read.table("hcmv.txt", header=TRUE)
+data
+```
+
+```{r}
+# Clean data
+video_df$like[video_df$like==99] <- NA
+
+```
+
+```{r}
+#SCENARIO 1
+played.videogames <- video_df$time
+played.videogames[played.videogames > 0] <- 1
+played.mean <-mean(played.videogames)
+#showing mean of binary variable is equivalent to (#ofstudentsthatplayed)/(#ofstudents) 
+played <- as.double(table(played.videogames[played.videogames==1]))
+played/91==played.mean
+#Confidence interval for discrete var "played.videogames" with finite population correction
+width <- 1.96 * sqrt(played.mean*(1-played.mean)*(314-91)/((91-1)*314))
+int.played <- c(played.mean - width, played.mean + width)
+int.played
+#BOOTSTRAPPING
+n <- 91
+N = 314
+ind.boot <- sample.int(n, size=N, replace=TRUE)
+boot.played.videogames <- played.videogames[ind.boot]
+B <- 2000
+boot.played.videogames.mean <- rep(NA, B)
+for(i in 1:B) {
+        ind <- sample.int(N, size=n, replace=TRUE)
+        boot <- boot.played.videogames[ind]
+        boot.played.videogames.mean[i] <- mean(boot)
+}
+
+
+# Fraction of kids that played video games the week before the test
+sample.mean <- mean(played.videogames)
+sample.mean
+# Estimate of fraction of kids that played vgs before the test using bootstrap
+bootstrap.mean <- mean(boot.played.videogames.mean)
+bootstrap.mean
+# Confidence Interval (Bootstrap Sample Means)
+boot.played.videogames.sd <- sd(boot.played.videogames.mean)
+boot.played.videogames.sd
+
+boot.played.videogames.ci <- c(bootstrap.mean - 1.96*boot.played.videogames.sd, bootstrap.mean + 1.96*boot.played.videogames.sd)
+# Confidence Interval = 95% (Where z = 1.96)
+boot.played.videogames.ci
+
+# 0.025-quantile and 0.975 quantile of the bootstrap sample means (Interval Estimate)
+boot.played.videogames.qqi <- c(quantile(boot.played.videogames.mean, 0.025), quantile(bootstrap.mean, 0.975))
+boot.played.videogames.qqi
+
+# Check Normality by  Kolmogorov-Smirnov test [Lab 3]
+# ks.test((boot.mean - mean(boot.mean))/sd(boot.mean), pnorm)
+ks.test(((boot.played.videogames.mean - bootstrap.mean)/boot.played.videogames.sd), pnorm)
+
+# Create directory to save graphs 
+dir.create(file.path("graphs"), showWarnings = FALSE)
+
+
+# Histrogram Plot Generation
+hist(boot.played.videogames.mean, main="Played Video Games Mean Bootstrap Histogram", xlab="Bootstrap Sample Mean")
+# add lines for bootsrap CI
+abline(v=boot.played.videogames.ci[1])
+abline(v=boot.played.videogames.ci[2])
+dev.copy(png,'graphs/scen1histogram.png')
+dev.off()
+# QQ Plot Generations
+qqnorm(boot.played.videogames.mean, main="Bootstrap Mean Normal QQ Plot")
+qqline(boot.played.videogames.mean)
+dev.copy(png,'graphs/scen1qqline.png')
+dev.off()
+#jackknife
+jack.means = rep(NA, n)
+for (i in seq(1,n,1)) {
+  jack.means[i] = mean(played.videogames[-i])
+}
+jack.mu = mean(jack.means)
+jack.sd = sd(jack.means)
+jack.int = c(jack.mu - 1.96*jack.sd, jack.mu + 1.96*jack.sd)
+#histogram of jackknife CI on sample data
+hist(played.videogames, main='jackknife 95% confidence interval on sample data')
+abline(v=c(jack.int[1],jack.int[2]),lwd=2,col=c('red','blue'))
+#histogram of bootstrap CI on sample data
+hist(played.videogames, main='bootstrap 95% confidence interval on sample data')
+abline(v=c(boot.played.videogames.ci[1],boot.played.videogames.ci[2]),lwd=2,col=c('red','blue'))
+```
+
+
+```{r}
+#SCENARIO 2
+
+#Scatterplot of hours played (time) against freq
+plot(video_df$time, video_df$freq, main="Time Played and Frequency Played Video Games Scatterplot", 
+        xlab="Amount of Hours Played Video Games Last Week", ylab="Frequency Play Video Games", yaxt="n")
+axis(2, at=1:4, labels=list("Daily", "Weekly", "Monthly", "Semesterly"))
+dev.copy(png,'graphs/scen2scatter.png')
+dev.off()
+
+#Pearson Correlation between hours played (time) and freq
+cor(video_df$time, video_df$freq, use = "complete.obs")
+##abs too low to mean anything - result of bias to the data as asked about playing video games the week before a midterm
+
+
+#Barplots to show sample distrubitions of hours played last week grouped by frequency played games
+#Daily Players
+dt <- with(video_df, table(freq[video_df$freq==1], time[video_df$freq==1]))
+dp <- barplot(dt, col="red", main="Time Played for Daily Video Game Players", xlab="Hours of Games Played", ylab="Number of Students")
+text(dp, dt, labels=dt, pos=1, col="white", font=2)
+dev.copy(png,'graphs/scen2dailybox.png')
+dev.off()
+
+#Weekly Players
+wt <- with(video_df, table(freq[video_df$freq==2], time[video_df$freq==2]))
+wp <- barplot(wt, col="blue", main="Time Played for Weekly Video Game Players", xlab="Hours of Games Played", ylab="Number of Students")
+text(wp, wt, labels=wt, pos=1, col="white", font=2)
+dev.copy(png,'graphs/scen2weeklybox.png')
+dev.off()
+
+#Monthly Players
+mt <- with(video_df, table(freq[video_df$freq==3], time[video_df$freq==3]))
+mt
+mp <- barplot(mt, col="darkgoldenrod3", main="Time Played for Monthly Video Game Players", xlab="Hours of Games Played", ylab="Number of Students")
+text(mp, mt, labels=mt, pos=1, col="white", font=2)
+dev.copy(png,'graphs/scen2monthlybox.png')
+dev.off()
+
+#Semesterly Players
+st <- with(video_df, table(freq[video_df$freq==4], time[video_df$freq==4]))
+sp <- barplot(st, col="green4", main="Time Played for Semesterly Video Game Players", xlab="Hours of Games Played", ylab="Number of Students")
+text(sp, st, labels=st, pos=1, col="white", font=2)
+dev.copy(png,'graphs/scen2sembox.png')
+dev.off()
+
+#Bar plot showing mean hours of games played grouped by frequency
+time.means.by.freq <- matrix(c(
+        mean(video_df$time[video_df$freq==1], na.rm=TRUE),
+        mean(video_df$time[video_df$freq==2], na.rm=TRUE),
+        mean(video_df$time[video_df$freq==3], na.rm=TRUE),
+        mean(video_df$time[video_df$freq==4], na.rm=TRUE)),
+        ncol=4,byrow=TRUE)
+colnames(time.means.by.freq) <- c("Daily", "Weekly", "Monthly", "Semesterly")
+rownames(time.means.by.freq) <- c("Mean Time Played")
+time.means.by.freq <- as.table(time.means.by.freq)
+time.means.by.freq 
+
+colorBlind.4 <- c(red='#FF1300', blue='#002DFF', darkgoldenrod3='#CD950C', green4='#008B01')
+
+meanplot <- barplot(time.means.by.freq, beside=TRUE, col=colorBlind.4, main="Mean Hours Played by Frequency", xlab="Frequency Play Video Games", ylab="Mean Hours Played")
+dev.copy(png,'graphs/scen2meanbox.png')
+dev.off()
+
+```
+
