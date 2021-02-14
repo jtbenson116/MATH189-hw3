@@ -5,9 +5,16 @@ output: html_document
 
 
 ```{r}
+# Set up environment
+library(lattice)
+set.seed(318)
+
+# Create directory to save graphs 
+dir.create(file.path("graphs"), showWarnings = FALSE)
+
 # Read in the data
 data <- read.table("hcmv.txt", header=TRUE)
-data
+locations <- data$location
 ```
 
 ```{r}
@@ -18,82 +25,37 @@ video_df$like[video_df$like==99] <- NA
 
 ```{r}
 #SCENARIO 1
-played.videogames <- video_df$time
-played.videogames[played.videogames > 0] <- 1
-played.mean <-mean(played.videogames)
-#showing mean of binary variable is equivalent to (#ofstudentsthatplayed)/(#ofstudents) 
-played <- as.double(table(played.videogames[played.videogames==1]))
-played/91==played.mean
-#Confidence interval for discrete var "played.videogames" with finite population correction
-width <- 1.96 * sqrt(played.mean*(1-played.mean)*(314-91)/((91-1)*314))
-int.played <- c(played.mean - width, played.mean + width)
-int.played
-#BOOTSTRAPPING
-n <- 91
-N = 314
-ind.boot <- sample.int(n, size=N, replace=TRUE)
-boot.played.videogames <- played.videogames[ind.boot]
-B <- 2000
-boot.played.videogames.mean <- rep(NA, B)
-for(i in 1:B) {
-        ind <- sample.int(N, size=n, replace=TRUE)
-        boot <- boot.played.videogames[ind]
-        boot.played.videogames.mean[i] <- mean(boot)
-}
+
+# biologists conjectured that clusters of palindromes in CMV may serve the same role as the single long 
+# palindrome in Herpes simplex, which is used to help find the origin of replication
+# Hence, we begin by looking at the distribution of palindromes to see if we can make any observations about the type
 
 
-# Fraction of kids that played video games the week before the test
-sample.mean <- mean(played.videogames)
-sample.mean
-# Estimate of fraction of kids that played vgs before the test using bootstrap
-bootstrap.mean <- mean(boot.played.videogames.mean)
-bootstrap.mean
-# Confidence Interval (Bootstrap Sample Means)
-boot.played.videogames.sd <- sd(boot.played.videogames.mean)
-boot.played.videogames.sd
-
-boot.played.videogames.ci <- c(bootstrap.mean - 1.96*boot.played.videogames.sd, bootstrap.mean + 1.96*boot.played.videogames.sd)
-# Confidence Interval = 95% (Where z = 1.96)
-boot.played.videogames.ci
-
-# 0.025-quantile and 0.975 quantile of the bootstrap sample means (Interval Estimate)
-boot.played.videogames.qqi <- c(quantile(boot.played.videogames.mean, 0.025), quantile(bootstrap.mean, 0.975))
-boot.played.videogames.qqi
-
-# Check Normality by  Kolmogorov-Smirnov test [Lab 3]
-# ks.test((boot.mean - mean(boot.mean))/sd(boot.mean), pnorm)
-ks.test(((boot.played.videogames.mean - bootstrap.mean)/boot.played.videogames.sd), pnorm)
-
-# Create directory to save graphs 
-dir.create(file.path("graphs"), showWarnings = FALSE)
-
-
-# Histrogram Plot Generation
-hist(boot.played.videogames.mean, main="Played Video Games Mean Bootstrap Histogram", xlab="Bootstrap Sample Mean")
-# add lines for bootsrap CI
-abline(v=boot.played.videogames.ci[1])
-abline(v=boot.played.videogames.ci[2])
-dev.copy(png,'graphs/scen1histogram.png')
+stripplot(data$location, pch=16, cex=0.25)
+dev.copy(png,'graphs/scen1datastrip.png')
 dev.off()
-# QQ Plot Generations
-qqnorm(boot.played.videogames.mean, main="Bootstrap Mean Normal QQ Plot")
-qqline(boot.played.videogames.mean)
-dev.copy(png,'graphs/scen1qqline.png')
-dev.off()
-#jackknife
-jack.means = rep(NA, n)
-for (i in seq(1,n,1)) {
-  jack.means[i] = mean(played.videogames[-i])
-}
-jack.mu = mean(jack.means)
-jack.sd = sd(jack.means)
-jack.int = c(jack.mu - 1.96*jack.sd, jack.mu + 1.96*jack.sd)
-#histogram of jackknife CI on sample data
-hist(played.videogames, main='jackknife 95% confidence interval on sample data')
-abline(v=c(jack.int[1],jack.int[2]),lwd=2,col=c('red','blue'))
-#histogram of bootstrap CI on sample data
-hist(played.videogames, main='bootstrap 95% confidence interval on sample data')
-abline(v=c(boot.played.videogames.ci[1],boot.played.videogames.ci[2]),lwd=2,col=c('red','blue'))
+hist(data$location) #bins needed
+
+#Simulated Data (from DI6)
+N <- 200000
+n <- 300
+sim.gene <- seq(1, N)
+#Random/Uniform
+site.random <- sample.int(N, size=n) 
+stripplot(site.random, pch=16, cex=0.25)
+#Normal
+norm.quant <- seq(-3, 3, length.out=N)
+site.norm <- sample.int(N, size=n, prob=dnorm(norm.quant))
+stripplot(site.norm, pch=16, cex=0.25)
+#Random 30 Places
+gene.double <- sample.int(N, size=30)
+gene.weight <- rep(0.5, N)
+gene.weight[gene.double] <- gene.weight[gene.double] + 0.5
+set.seed(215)
+site.double <- sample.int(N, size=n, prob=gene.weight)
+
+# Do above, but with our data! Create simulations by bootstrap and (mayb) jackknifing
+
 ```
 
 
