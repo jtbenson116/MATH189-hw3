@@ -93,14 +93,13 @@ dev.off()
 betas <- rbeta(n,2,2)
 b1 <- betas[0:(2 *n/3)]*186000
 b2 <-betas[(2 *n/3):n]*90000+150000
-sims <- c(b1, b2)
-hist(b2)
+site.bimodal <- c(b1, b2)
 #Scatter
-stripplot(sims, pch=16, cex=0.25, main="Bimodal Locations Scatter")
+stripplot(site.bimodal, pch=16, cex=0.25, main="Bimodal Locations Scatter")
 dev.copy(png,'graphs/scen1bimodalstrip.png')
 dev.off()
 #Histogram
-bimod.hist <- hist(sims, breaks=seq(0,240000,4000), xaxt="n", main="Bimodal Locations Histogram")
+bimod.hist <- hist(site.bimodal, breaks=seq(0,240000,4000), xaxt="n", main="Bimodal Locations Histogram")
 axis(side=1, at=seq(0, 240000, 12000), las=2)
 dev.copy(png,'graphs/scen1bimodalhist.png')
 dev.off()
@@ -109,13 +108,20 @@ dev.off()
 gene.double <- locations
 gene.weight <- rep(0.5, N)
 gene.weight[gene.double] <- gene.weight[gene.double] + 0.5
-site.double <- sample.int(N, size=n, prob=gene.weight)
+#Creating 5 random simulations, where location of actual palindrome twice as likely to be picked
+sim1 <- c(sample.int(N, size=n, prob=gene.weight))
+sim2 <- c(sample.int(N, size=n, prob=gene.weight))
+sim3 <- c(sample.int(N, size=n, prob=gene.weight))
+sim4 <- c(sample.int(N, size=n, prob=gene.weight))
+sim5 <- c(sample.int(N, size=n, prob=gene.weight))
+site.weight <- data.frame(sim1, sim2, sim3, sim4, sim5)
+site.weight
 #Scatter
-stripplot(site.double, pch=16, cex=0.25, main="Weighted Random Locations Scatter")
+stripplot(site.weight$sim1, pch=16, cex=0.25, main="Weighted Random Locations Scatter")
 dev.copy(png,'graphs/scen1weightstrip.png')
 dev.off()
 #Histogram
-weighted.hist <- hist(site.double, breaks=seq(0,240000,4000), xaxt="n", main="Weighted Random Locations Histogram")
+weighted.hist <- hist(site.weight$sim1, breaks=seq(0,240000,4000), xaxt="n", main="Weighted Random Locations Histogram")
 axis(side=1, at=seq(0, 240000, 12000), las=2)
 dev.copy(png,'graphs/scen1weighthist.png')
 dev.off()
@@ -126,94 +132,121 @@ plot(normal.hist, col = lt.pink, xaxt="n", main="Data vs Normal Locations")
 plot(data.hist, col = lt.blue, add = TRUE)
 axis(side=1, at=seq(0, 240000, 12000), las=2)
 legend("topright", c("Data", "Normal"), col=c(lt.blue, lt.pink), lwd=10, border="black")
-dev.copy(png,'graphs/scen1ndatanormalhist.png')
+dev.copy(png,'graphs/scen1datanormalhist.png')
 dev.off()
 #Data vs Random
 plot(data.hist, col = lt.blue, xaxt="n", main="Data vs Random Locations") 
 plot(random.hist, col = lt.pink, add = TRUE)
 axis(side=1, at=seq(0, 240000, 12000), las=2)
 legend("topleft", c("Data", "Random"), col=c(lt.blue, lt.pink), lwd=10, border="black")
-dev.copy(png,'graphs/scen1ndatarandmohist.png')
+dev.copy(png,'graphs/scen1datarandmohist.png')
 dev.off()
 #Data vs Bimodal
 plot(data.hist, col = lt.blue, xaxt="n", main="Data vs Bimodal Locations") 
 plot(bimod.hist, col = lt.pink, add = TRUE)
 axis(side=1, at=seq(0, 240000, 12000), las=2)
 legend("topright", c("Data", "Bimodal"), col=c(lt.blue, lt.pink), lwd=10, border="black")
-dev.copy(png,'graphs/scen1ndatabimodalhist.png')
+dev.copy(png,'graphs/scen1databimodalhist.png')
 dev.off()
 #Data vs Weighted
 plot(data.hist, col = lt.blue, xaxt="n", main="Data vs Weighted Random Locations") 
 plot(weighted.hist, col = lt.pink, add = TRUE)
 axis(side=1, at=seq(0, 240000, 12000), las=2)
 legend("topright", c("Data", "Weighted"), col=c(lt.blue, lt.pink), lwd=10, border="black")
-dev.copy(png,'graphs/scen1ndataweighthist.png')
+dev.copy(png,'graphs/scen1dataweighthist.png')
 dev.off()
 ```
-
 
 ```{r}
-#SCENARIO 2
+### SCENARIO 3 ####
+# NON OVERLAPPING INTERVAL COUNTS
+regionsplit <- function(n.region, gene, site){
+  count.int <- table(cut(site, breaks = seq(1, length(gene), length.out=n.region+1), include.lowest=TRUE))
+  count.vector <- as.vector(count.int)
+  count.tab <- table(count.vector)
+  return (count.tab)
+}
 
-#Scatterplot of hours played (time) against freq
-plot(video_df$time, video_df$freq, main="Time Played and Frequency Played Video Games Scatterplot", 
-        xlab="Amount of Hours Played Video Games Last Week", ylab="Frequency Play Video Games", yaxt="n")
-axis(2, at=1:4, labels=list("Daily", "Weekly", "Monthly", "Semesterly"))
-dev.copy(png,'graphs/scen2scatter.png')
-dev.off()
+#picking num regions (lets say 45?)
+#random vector
+n.region <- 45
+regionsplit(n.region, sim.gene, site.random)
+#normal vector
+regionsplit(n.region, sim.gene, site.norm)
+#weighted vectors 
+regionsplit(n.region, sim.gene, site.weight$sim1)
+regionsplit(n.region, sim.gene, site.weight$sim2)
+regionsplit(n.region, sim.gene, site.weight$sim3)
+regionsplit(n.region, sim.gene, site.weight$sim4)
+regionsplit(n.region, sim.gene, site.weight$sim5)
+#X^2 test
+chisqtable <- function(n.region, site, N){
+  n <- length(site)
+  # lambda estimate
+  lambda.est <- n/n.region
+  # cut into n.region number of non-overlapping intervals
+  count.int <- table(cut(site, breaks = seq(1, length(sim.gene), length.out=n.region+1), include.lowest=TRUE))
+  # get the count levels range
+  count.vector <- as.vector(count.int)
+  count.range <- max(count.vector) - min(count.vector) + 1
+  
+  # create contingency table
+  table <- matrix(rep(NA, count.range*3), count.range, 3)
+  for (i in 1:count.range){
+    offset <- min(count.vector) - 1
+    # first column = count level
+    table[i, 1] <- i + offset
+    # second column = observed count
+    table[i, 2] <- sum(count.vector == i + offset)
+    # third column = expected count
+    if (i + offset == min(count.vector) && (min(count.vector) != 0))
+      table[i, 3] <- ppois(i+offset, lambda.est)*n.region
+    else if (i + offset == max(count.vector))
+      table[i, 3] <- (1 - ppois(i + offset - 1, lambda.est))*n.region
+    else
+      table[i, 3] <- (ppois(i+offset, lambda.est) - ppois(i + offset - 1, lambda.est))*n.region
+  }
+  
+  return (table)
+}
+# Random Chi-Square table
+site.random.tabtemp <- chisqtable(n.region, site.random, N)
+# Normal Chi Sq Table
+site.norm.tabtemp <- chisqtable(n.region, site.norm, N)
+# Weighted Chi-Squared Tables
+site.weight1.tabtemp <- chisqtable(n.region, site.weight$sim1, N)
+site.weight2.tabtemp <- chisqtable(n.region, site.weight$sim2, N)
+site.weight3.tabtemp <- chisqtable(n.region, site.weight$sim3, N)
+site.weight4.tabtemp <- chisqtable(n.region, site.weight$sim4, N)
+site.weight5.tabtemp <- chisqtable(n.region, site.weight$sim5, N)
+site.weight1.tabtemp
+#We can group together intervals 
+#chi sq test for uniformly randomly selected gene locations
+site.random.tab <- matrix(rep(NA, 7*2), 7, 2)
+site.random.tab[1,] <- colSums(site.random.tabtemp[1:4, 2:3])
+site.random.tab[2:6,] <- site.random.tabtemp[5:9, 2:3]
+site.random.tab[7,] <- colSums(site.random.tabtemp[10:11, 2:3])
+site.random.stats <- sum((site.random.tab[,2] - site.random.tab[,1])^2/site.random.tab[,2])
+pchisq(site.random.stats, 7 - 2, lower.tail=FALSE)
 
-#Pearson Correlation between hours played (time) and freq
-cor(video_df$time, video_df$freq, use = "complete.obs")
-##abs too low to mean anything - result of bias to the data as asked about playing video games the week before a midterm
+site.norm.tab <- matrix(rep(NA, 7*2), 7, 2)
+site.norm.tab[1,] <- colSums(site.norm.tabtemp[1:4, 2:3])
+site.norm.tab[2:6,] <- site.norm.tabtemp[5:9, 2:3]
+site.norm.tab[7,] <- colSums(site.norm.tabtemp[10:19, 2:3])
+site.norm.stats <- sum((site.norm.tab[,2] - site.norm.tab[,1])^2/site.norm.tab[,2])
+pchisq(site.norm.stats, 7 - 2, lower.tail=FALSE)
 
+site.weight1.tab <- matrix(rep(NA, 7*2), 7, 2)
+site.weight1.tab[1,] <- colSums(site.weight1.tabtemp[1:4, 2:3])
+site.weight1.tab[2:6,] <- site.weight1.tabtemp[5:9, 2:3]
+site.weight1.tab[7,] <- colSums(site.weight1.tabtemp[10:11, 2:3])
+site.weight1.stats <- sum((site.weight1.tab[,2] - site.weight1.tab[,1])^2/site.weight1.tab[,2])
+pchisq(site.weight1.stats, 7 - 2, lower.tail=FALSE)
 
-#Barplots to show sample distrubitions of hours played last week grouped by frequency played games
-#Daily Players
-dt <- with(video_df, table(freq[video_df$freq==1], time[video_df$freq==1]))
-dp <- barplot(dt, col="red", main="Time Played for Daily Video Game Players", xlab="Hours of Games Played", ylab="Number of Students")
-text(dp, dt, labels=dt, pos=1, col="white", font=2)
-dev.copy(png,'graphs/scen2dailybox.png')
-dev.off()
-
-#Weekly Players
-wt <- with(video_df, table(freq[video_df$freq==2], time[video_df$freq==2]))
-wp <- barplot(wt, col="blue", main="Time Played for Weekly Video Game Players", xlab="Hours of Games Played", ylab="Number of Students")
-text(wp, wt, labels=wt, pos=1, col="white", font=2)
-dev.copy(png,'graphs/scen2weeklybox.png')
-dev.off()
-
-#Monthly Players
-mt <- with(video_df, table(freq[video_df$freq==3], time[video_df$freq==3]))
-mt
-mp <- barplot(mt, col="darkgoldenrod3", main="Time Played for Monthly Video Game Players", xlab="Hours of Games Played", ylab="Number of Students")
-text(mp, mt, labels=mt, pos=1, col="white", font=2)
-dev.copy(png,'graphs/scen2monthlybox.png')
-dev.off()
-
-#Semesterly Players
-st <- with(video_df, table(freq[video_df$freq==4], time[video_df$freq==4]))
-sp <- barplot(st, col="green4", main="Time Played for Semesterly Video Game Players", xlab="Hours of Games Played", ylab="Number of Students")
-text(sp, st, labels=st, pos=1, col="white", font=2)
-dev.copy(png,'graphs/scen2sembox.png')
-dev.off()
-
-#Bar plot showing mean hours of games played grouped by frequency
-time.means.by.freq <- matrix(c(
-        mean(video_df$time[video_df$freq==1], na.rm=TRUE),
-        mean(video_df$time[video_df$freq==2], na.rm=TRUE),
-        mean(video_df$time[video_df$freq==3], na.rm=TRUE),
-        mean(video_df$time[video_df$freq==4], na.rm=TRUE)),
-        ncol=4,byrow=TRUE)
-colnames(time.means.by.freq) <- c("Daily", "Weekly", "Monthly", "Semesterly")
-rownames(time.means.by.freq) <- c("Mean Time Played")
-time.means.by.freq <- as.table(time.means.by.freq)
-time.means.by.freq 
-
-colorBlind.4 <- c(red='#FF1300', blue='#002DFF', darkgoldenrod3='#CD950C', green4='#008B01')
-
-meanplot <- barplot(time.means.by.freq, beside=TRUE, col=colorBlind.4, main="Mean Hours Played by Frequency", xlab="Frequency Play Video Games", ylab="Mean Hours Played")
-dev.copy(png,'graphs/scen2meanbox.png')
-dev.off()
-
+site.weight2.tab <- matrix(rep(NA, 7*2), 7, 2)
+site.weight2.tab[1,] <- colSums(site.weight2.tabtemp[1:4, 2:3])
+site.weight2.tab[2:6,] <- site.weight2.tabtemp[5:9, 2:3]
+site.weight2.tab[7,] <- colSums(site.weight2.tabtemp[10:11, 2:3])
+site.weight2.stats <- sum((site.weight2.tab[,2] - site.weight2.tab[,1])^2/site.weight2.tab[,2])
+pchisq(site.weight2.stats, 7 - 2, lower.tail=FALSE)
 ```
-
