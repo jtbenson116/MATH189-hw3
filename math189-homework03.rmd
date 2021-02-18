@@ -93,14 +93,13 @@ dev.off()
 betas <- rbeta(n,2,2)
 b1 <- betas[0:(2 *n/3)]*186000
 b2 <-betas[(2 *n/3):n]*90000+150000
-sims <- c(b1, b2)
-hist(b2)
+site.bimodal <- c(b1, b2)
 #Scatter
-stripplot(sims, pch=16, cex=0.25, main="Bimodal Locations Scatter")
+stripplot(site.bimodal, pch=16, cex=0.25, main="Bimodal Locations Scatter")
 dev.copy(png,'graphs/scen1bimodalstrip.png')
 dev.off()
 #Histogram
-bimod.hist <- hist(sims, breaks=seq(0,240000,4000), xaxt="n", main="Bimodal Locations Histogram")
+bimod.hist <- hist(site.bimodal, breaks=seq(0,240000,4000), xaxt="n", main="Bimodal Locations Histogram")
 axis(side=1, at=seq(0, 240000, 12000), las=2)
 dev.copy(png,'graphs/scen1bimodalhist.png')
 dev.off()
@@ -109,13 +108,20 @@ dev.off()
 gene.double <- locations
 gene.weight <- rep(0.5, N)
 gene.weight[gene.double] <- gene.weight[gene.double] + 0.5
-site.double <- sample.int(N, size=n, prob=gene.weight)
+#Creating 5 random simulations, where location of actual palindrome twice as likely to be picked
+sim1 <- c(sample.int(N, size=n, prob=gene.weight))
+sim2 <- c(sample.int(N, size=n, prob=gene.weight))
+sim3 <- c(sample.int(N, size=n, prob=gene.weight))
+sim4 <- c(sample.int(N, size=n, prob=gene.weight))
+sim5 <- c(sample.int(N, size=n, prob=gene.weight))
+site.weight <- data.frame(sim1, sim2, sim3, sim4, sim5)
+site.weight
 #Scatter
-stripplot(site.double, pch=16, cex=0.25, main="Weighted Random Locations Scatter")
+stripplot(site.weight$sim1, pch=16, cex=0.25, main="Weighted Random Locations Scatter")
 dev.copy(png,'graphs/scen1weightstrip.png')
 dev.off()
 #Histogram
-weighted.hist <- hist(site.double, breaks=seq(0,240000,4000), xaxt="n", main="Weighted Random Locations Histogram")
+weighted.hist <- hist(site.weight$sim1, breaks=seq(0,240000,4000), xaxt="n", main="Weighted Random Locations Histogram")
 axis(side=1, at=seq(0, 240000, 12000), las=2)
 dev.copy(png,'graphs/scen1weighthist.png')
 dev.off()
