@@ -179,7 +179,21 @@ distgraphs <- function(dat, word, c) {
   hist(dat, breaks=seq(0,5600,200), xaxt="n", main=ti, xlab="Distance from Last Palindrome", ylab="Count", col = c)
   axis(side=1, at=seq(0, 5600, 600), las=2)
 }
-
+#CODE FROM NET
+x.gen <- rexp(1000, rate = 3)
+x.gen
+hist(x.gen, prob = TRUE)
+library(MASS)
+x.est <- fitdistr(x.gen, "exponential")$estimate
+curve(dexp(x, rate = x.est), add = TRUE, col = "red", lwd = 2)
+x
+#OUR TEST
+x.gen <- data$distances
+x.gen
+distgraphs(data$distances, "Data", "gray")
+library(MASS)
+x.est <- fitdistr(x.gen, "exponential")$estimate
+curve(dexp(x, rate = 3), add = TRUE, col = "red", lwd = 2)
 
 distgraphs(data$distances, "Data", "gray")
 dev.copy(png,'graphs/scen2distdata.png')
