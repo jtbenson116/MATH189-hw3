@@ -37,8 +37,6 @@ data$distances = distances
 data
 
 
-# ooooh maybe graph dot plot with x = location and y = distance
-
 ```
 
 ```{r}
@@ -155,6 +153,22 @@ axis(side=1, at=seq(0, 240000, 12000), las=2)
 legend("topright", c("Data", "Weighted"), col=c(lt.blue, lt.pink), lwd=10, border="black")
 dev.copy(png,'graphs/scen1dataweighthist.png')
 dev.off()
+```
+
+```{r}
+### SCENARIO 2 ####
+
+# ooooh maybe graph dot plot with x = location and y = distance
+# distance hist bins=200
+
+max(data$distances)
+
+
+data.hist <- hist(data$distances, breaks=seq(0,5400,200), xaxt="n", main="Distances Between Palidromes", xlab="Distance from Last Palindrome", ylab="Count")
+axis(side=1, at=seq(0, 5400, 600), las=2)
+dev.copy(png,'graphs/scen2disthist.png')
+dev.off()
+
 ```
 
 ```{r}
