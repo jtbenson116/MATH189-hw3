@@ -248,3 +248,106 @@ site.weight2.tab[7,] <- colSums(site.weight2.tabtemp[10:11, 2:3])
 site.weight2.stats <- sum((site.weight2.tab[,2] - site.weight2.tab[,1])^2/site.weight2.tab[,2])
 pchisq(site.weight2.stats, 7 - 2, lower.tail=FALSE)
 ```
+
+```{r}
+#scan test for "unusual clusters"
+#observed and expected palindrome counts
+exp.obs.func = function (R) {
+  tab = table(cut(locations, breaks = seq(1,max(DNA), length.out = R+1), include.lowest=TRUE))
+  counts = as.data.frame(tab)
+  obs.exp.counts = aggregate(counts, by=list(counts$Freq), FUN=length)[,c('Group.1','Freq')]
+  #get #palindromes and observed groups w/ that number of palindromes
+  names(obs.exp.counts) = c('n.palindromes','observed')
+  #get lambda: expected value
+  lambda = 296 / R
+  exp.counts = rep(NA, nrow(obs.exp.counts))
+  for (i in seq(1, nrow(obs.exp.counts))) {
+    n.pals = obs.exp.counts$n.palindromes
+    #get expected value for each number of palindromes
+    exp.counts[i] = R * exp(-lambda) * ((lambda^n.pals[i]) / factorial(n.pals[i]))
+  }
+  obs.exp.counts$expected = exp.counts
+  return(obs.exp.counts) #returns dataframe of observed, expected, and number of palindromes
+}
+```
+
+```{r}
+#p values for each distribution (R interval separation)
+scan.test = function(R) {
+  tab = table(cut(locations, breaks = seq(0,max(DNA), length.out = R+1), include.lowest=TRUE, left=TRUE))
+  counts = as.data.frame(tab)
+  obs.exp.counts = aggregate(counts, by=list(counts$Freq), FUN=length)[,c('Group.1','Freq')]
+  names(obs.exp.counts) = c('n.palindromes','observed')
+  lambda = 296 / R
+  #initialize p
+  p.val = 0
+  for (i in seq(1, nrow(obs.exp.counts))) {
+    n.pals = obs.exp.counts$n.palindromes
+    #add each subset to p value
+    p.val = p.val + exp(-lambda) * ((lambda^n.pals[i])/factorial(n.pals[i]))
+  }
+  #compute 1 - p raise to the Rth power (R is number of intervals)
+  p.val = 1 - p.val^R
+  return(p.val)
+}
+```
+
+```{r}
+x = seq(55, 400, 5)
+#show all p values
+for (i in x) {
+  print(c(i, scan.test(i)))
+}
+
+maxs = rep(NA, length(x))
+obs = rep(NA, length(x))
+#create max palindromes and observed counts dataframe
+for (i in seq(1, length(x), 1)) {
+  dims = dim(p.4(x[i]))
+  maxs[i] = max(p.4(x[i])$n.palindromes)
+  obs[i] = p.4(x[i])$observed[dims[1]]
+}
+maxs.df = data.frame(R.count = x, n.pals=maxs, obs=obs)
+max.df
+```
+
+```{r}
+#print p-values for all Rs with p of less than .05
+for (i in x) {
+  if (scan.test(i) < .05) {
+    print(i)
+    print(scan.test(i))
+  }
+}
+#supplemental findings: compute distance between palindromes for each group
+DNA.distances = function (R) {
+  dist.func = function (x) {return(c(max(x)-min(x), length(x), max(x), min(x)))}
+  agg.table = aggregate(data$location, list(cut(locations, breaks = seq(0,max(DNA), length.out = R+1), left=TRUE)), dist.func)
+  return(agg.table$x[which(agg.table$x[,2] > 5),])
+}
+#print distances for all groups of more than 5 palindromes
+for (i in x) {
+  if (scan.test(i) < .05) {
+    print(i)
+    print(DNA.distances(i))
+  }
+}
+#seth code
+maxPalCount <- function(x){
+  count.int <- table(cut(locations, breaks = seq(1, 229354, length.out=x+1), include.lowest=TRUE))
+  count.vector <- as.vector(count.int)
+  maxPal <- max(count.vector)
+  return(maxPal)
+}
+maxPals <- c()
+mp <- (matrix(nrow=400,ncol=2))
+colnames(mp) <- c("intervalCount","MaxPalindromeCount")
+for(i in seq(5,2000,5)){
+  maxPals[i] <- maxPalCount(i)
+  j= i/5
+    mp[j,1] <- i
+    mp[j,2] <- maxPalCount(i)
+}
+mpdf <- as.data.frame(mp)
+plot(mpdf, col=rgb(red=0.2, green=0.2, blue=1.0, alpha=0.3), las=3, cex.axis = 0.8)
+```
