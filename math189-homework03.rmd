@@ -24,20 +24,6 @@ data
 locations
 ```
 
-```{r}
-#Find distances between locations of palindromes
-distances=c()
-distances[1] = locations[1]
-for (i in 2:length(locations)) { 
-    distances[i]=locations[i]-locations[i-1]
-}
-
-#Update dataframe to include distances for analysis 
-data$distances = distances
-data
-
-
-```
 
 ```{r}
 #SCENARIO 1
@@ -153,6 +139,69 @@ axis(side=1, at=seq(0, 240000, 12000), las=2)
 legend("topright", c("Data", "Weighted"), col=c(lt.blue, lt.pink), lwd=10, border="black")
 dev.copy(png,'graphs/scen1dataweighthist.png')
 dev.off()
+```
+
+```{r}
+### SCENARIO 2 ####
+
+# ooooh maybe graph dot plot with x = location and y = distance
+plot(data)
+# Well that was useless...
+
+
+#Function to find distances between locations of palindromes
+distcalc <- function(dat) {
+  distances=c()
+  distances[1] = dat[1]
+  for (i in 2:length(dat)) { 
+    distances[i]=dat[i]-dat[i-1]
+  }
+  return(distances)
+}
+
+#Update main data's dataframe to include distances for analysis 
+data$distances = distcalc(locations)
+data
+
+#create df for simulation distances
+sim1d <- distcalc(sort(sim1))
+sim2d <- distcalc(sort(sim2))
+sim3d <- distcalc(sort(sim3))
+sim4d <- distcalc(sort(sim4))
+sim5d <- distcalc(sort(sim5))
+weight.distances <- data.frame(sim1d, sim2d, sim3d, sim4d, sim5d)
+weight.distances
+
+
+# Distance Histograms function (with bins=200)
+distgraphs <- function(dat, word, c) {
+  ti <- paste("Distances Between Palidromes (", word, ")", sep = "", collapse = NULL)
+  hist(dat, breaks=seq(0,5600,200), xaxt="n", main=ti, xlab="Distance from Last Palindrome", ylab="Count", col = c)
+  axis(side=1, at=seq(0, 5600, 600), las=2)
+}
+
+distgraphs(data$distances, "Data", "gray")
+dev.copy(png,'graphs/scen2distdata.png')
+dev.off()
+distgraphs(sim1d, "Sim 1", "red")
+dev.copy(png,'graphs/scen2distsim1.png')
+dev.off()
+distgraphs(sim2d, "Sim 2", "orange")
+dev.copy(png,'graphs/scen2distsim2.png')
+dev.off()
+distgraphs(sim3d, "Sim 3", "yellow")
+dev.copy(png,'graphs/scen2distsim3.png')
+dev.off()
+distgraphs(sim4d, "Sim 4", "green")
+dev.copy(png,'graphs/scen2distsim4.png')
+dev.off()
+distgraphs(sim5d, "Sim 5", "blue")
+dev.copy(png,'graphs/scen2distsim5.png')
+dev.off()
+
+
+
+
 ```
 
 ```{r}
